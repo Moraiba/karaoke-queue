@@ -6,14 +6,22 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/moraiba/karaoke-queue/internal/db"
 )
 
 func main() {
+
 	// Puerto (listo para Docker / prod)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+
+	database := db.Connect()
+	defer database.Close()
+
+	// Migraciones
+	db.RunMigrations(database)
 
 	// Gin router
 	router := gin.Default()
