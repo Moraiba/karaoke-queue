@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -20,11 +21,24 @@ func Connect() *sqlx.DB {
 		os.Getenv("DB_SSLMODE"),
 	)
 
-	db, err := sqlx.Connect("postgres", dsn)
-	if err != nil {
-		log.Fatal("❌ DB connection failed:", err)
+	var db *sqlx.DB
+	var err error
+
+	for i := 1; i <= 10; i++ {
+		db, err = sqlx.Open("postgres", dsn)
+		if err == nil {
+			err = db.Ping()
+		}
+
+		if err == nil {
+			log.Println("✅ Connected to PostgreSQL")
+			return db
+		}
+
+		log.Printf("⏳ Waiting for DB... attempt %d/10\n", i)
+		time.Sleep(2 * time.Second)
 	}
 
-	log.Println("✅ Connected to PostgreSQL")
-	return db
+	log.Fatal("❌ Could not connect to DB after multiple attempts")
+	return nil
 }
